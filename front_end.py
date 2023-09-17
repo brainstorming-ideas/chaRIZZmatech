@@ -1,5 +1,4 @@
 import time
-
 import speech_recognition as sr
 
 
@@ -53,33 +52,67 @@ def recognize_speech_from_mic(recognizer, microphone):
 
 
 import taipy
-
 from taipy import Gui
+import cohere
 
-text = "Original text"
+text = "Speak!"
+roast = ""
+content = r'C:\Users\varsh\Documents\GitHub\taipy-website\charizzmatech.png'
 
 page = """
-# Rizzbot
+<|layout|columns=1 1|
 
-My text: <|{text}|>
+# ChaRIZZmatech
 
-<|{text}|input|>
+<|{content}|image|>
 
-<|Rizz|button|on_action=on_button_action|>
 
-<|Communication|button|on_action=on_button_action|>
+|>
+
+*Your Opener:* <|{text}|>
+
+*What I Think:* <|{roast}|>
+
+
+<|Record|button|on_action=on_button_action|>
 
 """
 def on_button_action(state):
+    state.text = 'Listening...'
     recognizer = sr.Recognizer()
     microphone = sr.Microphone()
     guess = recognize_speech_from_mic(recognizer, microphone)
-    state.text = "You said: {}".format(guess["transcription"])
+    input_rizz = " {}".format(guess["transcription"])
+    state.text = input_rizz
+
+    pre_prompt_r = 'tell me if my pick up line peoople is good or bad and be very mean about it. if its good say "w rizz" and if its bad be very mean and make fun of me in a funny way:' + input_rizz
+    co = cohere.Client('Lx3HxSuVigT0CNAqmdlZfUwKTeC4WUj1YfYaDWga') # This is your trial API key
+    response = co.generate(
+        model='command',
+        prompt=pre_prompt_r,
+        max_tokens=200,
+        temperature=0.9,
+        k=0,
+        stop_sequences=[],
+        return_likelihoods='NONE')
+    roast = ' {}'.format(response.generations[0].text)
+    state.roast = roast
+
 
 def on_change(state, var_name, var_value):
     if var_name == "text" and var_value == "Reset":
         state.text = ""
         return
 
-Gui(page).run()
 
+
+# stylekit = {
+#   "color_primary": "#6a329f",
+#   "color_secondary": "#d5a6bd",
+# }
+
+pages = {
+    "/"
+}
+
+Gui(page).run(host = "0.0.0.0", port = 5000)
